@@ -42,7 +42,12 @@ export function createSelectElement(title, id) {
 }
 export function addChangeListenerToSelect(select, column) {
 	select.on("change", function () {
-		column.search(select.val(), { exact: true }).draw();
+		const selectedValue = select.val();
+		if (selectedValue === "-") {
+			column.search('').draw();
+		} else {
+			column.search(selectedValue, { exact: true }).draw();
+		}
 	});
 }
 
