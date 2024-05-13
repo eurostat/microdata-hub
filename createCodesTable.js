@@ -88,13 +88,23 @@ function buildTableHeaderRows(artefactsCollection, dfIds) {
 	});
 
 	const rowspans = ["id", "Code Name"].map(key => `<th rowspan='3'>${key}</th>`);
-	const row1 = Array.from(yearsCount.keys()).map(key => `<th colspan='${yearsCount.get(key)}'>${key}</th>`);
+	const row1 = getFirstRow(yearsCount);
 	const row2 = getSecondRow(dfIdParameters);
-	const row3 = dfIdParameters.map(parameters => `<th>${parameters.MICRODATA_DOMAINS}</th>`);
+	const row3 = getThirdRow(dfIdParameters);
 
 	const headers = ["<tr>"].concat(rowspans, row1, ["</tr><tr>"], row2, ["</tr><tr>"], row3, ["</tr>"]);
 	return headers;
 }
+
+function getFirstRow(yearsCount) {
+	const yearsKeys = Array.from(yearsCount.keys());
+	const tableHeaders = yearsKeys.map(key => {
+		const colspanValue = yearsCount.get(key);
+		return `<th colspan='${colspanValue}'>${key}</th>`;
+	});
+	return tableHeaders;
+}
+
 /**
  * Generates the second row of a table based on the given dfIdParameters.
  * @param {Array} dfIdParameters - An array of parameters for the table rows.
@@ -122,6 +132,14 @@ function getSecondRow(dfIdParameters) {
 	}
 
 	return row2;
+}
+
+function getThirdRow(dfIdParameters) {
+	return dfIdParameters.map(parameters => {
+		const parts = parameters.MICRODATA_DOMAINS.split('_');
+		const lastPart = parts.pop();
+		return `<th>${1 ? parameters.MICRODATA_DOMAINS : lastPart}</th>`;
+	});
 }
 /**
  * Extracts parameters based on the dfId from the artefacts collection.
@@ -191,33 +209,41 @@ function findDfIdConstraints(artefact) {
 }
 
 /**
- * Extracts provision agreements for a given concept ID from artefact constraints.
+ * Extracts constraints from ether provision agreements or from dataflows for a specific concept ID within artefact constraints.
  * @param {object} artefactConstraints - The artefact constraints object containing cube regions.
  * @param {string} conceptId - The concept ID to extract provision agreements for.
- * @returns An object with included and excluded country codes based on provision agreements.
+ * @returns An object with included and excluded codes based on the concept ID.
  */
-function extractProvisionAgreements(artefactConstraints, conceptId) {
-	const agreedCountryCodes = { includedCodes: [], excludedCodes: [] };
+function extractConstraintsForConcept(artefactConstraints, conceptId) {
+	const match = { includedCodes: [], excludedCodes: [] };
 
 	artefactConstraints.cubeRegions.forEach(region => {
-		const { isIncluded, provisionAgreements } = region;
-		const [anyKey] = Object.keys(provisionAgreements);
-		if (provisionAgreements[anyKey].hasOwnProperty(countryCode)) {
-			const codes = extractAgreementObjects(provisionAgreements, conceptId);
+		const { isIncluded, provisionAgreements, dataflows } = region;
+
+		const constraints = provisionAgreements || dataflows;
+
+		if (isCurrentCountry(constraints)) {
+			const codes = extractAgreementObjects(constraints, conceptId);
 			if (codes) {
 				if (isIncluded) {
-					agreedCountryCodes.includedCodes.push(...codes);
+					match.includedCodes.push(...codes);
 				} else {
-					agreedCountryCodes.excludedCodes.push(...codes);
+					match.excludedCodes.push(...codes);
 				}
 			}
 		}
 	});
 
 	return {
-		included: agreedCountryCodes.includedCodes.length > 0 ? agreedCountryCodes.includedCodes : null,
-		excluded: agreedCountryCodes.excludedCodes.length > 0 ? agreedCountryCodes.excludedCodes : null
+		included: match.includedCodes.length > 0 ? match.includedCodes : null,
+		excluded: match.excludedCodes.length > 0 ? match.excludedCodes : null
 	};
+}
+
+function isCurrentCountry(constraints) {
+	const [anyKey] = Object.keys(constraints);
+	const region = countryCode === "codes" ? "ALL" : countryCode
+	return constraints[anyKey].hasOwnProperty(region);
 }
 
 function extractAgreementObjects(provisionAgreements, conceptId) {
@@ -229,13 +255,6 @@ function getConceptCodes(artefact, clId) {
 	return artefact.codes[clId].codes;
 }
 
-function checkConstraints(artefact, conceptId, code) {
-	return (
-		!artefact.constraints ||
-		!artefact.constraints[conceptId] ||
-		artefact.constraints[conceptId].includes(code)
-	);
-}
 
 /**
  * Filters and transforms concept codes based on the provided parameters.
@@ -246,19 +265,11 @@ function checkConstraints(artefact, conceptId, code) {
  * @param {boolean} [isIncluded=true] - Flag to determine if the code should be included or excluded.
  * @returns An array of objects containing filtered concept codes and their names.
  */
-function filterAndTransformConceptCodes(conceptCodes, artefact, conceptId, countryAgreement, isIncluded = true) {
-	if (countryCode === "codes") {
-		return Object.entries(conceptCodes)
-			.filter(([code]) => checkConstraints(artefact, conceptId, code))
-			.map(([code, name]) => ({ code, name }));
-	}
-
+function filterAndTransformConceptCodes(conceptCodes, countryAgreement, isIncluded = true) {
 	const countryAgreementSet = new Set(countryAgreement);
 
 	return Object.entries(conceptCodes)
 		.filter(([code]) => {
-			const passesConstraints = checkConstraints(artefact, conceptId, code);
-			if (!passesConstraints) return false;
 			return isIncluded ? countryAgreementSet.has(code) : !countryAgreementSet.has(code);
 		})
 		.map(([code, name]) => ({ code, name }));
@@ -272,26 +283,34 @@ function filterAndTransformConceptCodes(conceptCodes, artefact, conceptId, count
  * @param {object} accumulatedConceptData - The accumulated concept data object to store the filtered codes.
  * @returns None
  */
-function applyConstraints(artefact, conceptId, codeListId, accumulatedConceptData) {
+function applyConstraints(
+	artefact,
+	conceptId,
+	codeListId,
+	accumulatedConceptData
+) {
 	const artefactConstraints = findDfIdConstraints(artefact);
 	if (!artefactConstraints) return;
 
-	const provisionAgreements = extractProvisionAgreements(artefactConstraints, conceptId);
+	const constraints = extractConstraintsForConcept(artefactConstraints, conceptId);
 	const conceptCodes = getConceptCodes(artefact, codeListId);
 
 	const addFilteredCodes = (codes, isIncluded = true) => {
-		const filteredCodes = filterAndTransformConceptCodes(conceptCodes, artefact, conceptId, codes, isIncluded);
-		accumulatedConceptData.codes = accumulatedConceptData.codes.concat(filteredCodes);
+		const filteredCodes = filterAndTransformConceptCodes(
+			conceptCodes,
+			codes,
+			isIncluded
+		);
+		accumulatedConceptData.codes =
+			accumulatedConceptData.codes.concat(filteredCodes);
 	};
 
-	if (provisionAgreements.included) {
-		addFilteredCodes(provisionAgreements.included);
-	}
-	if (provisionAgreements.excluded) {
-		addFilteredCodes(provisionAgreements.excluded, false);
-	}
-	if (countryCode === "codes") {
-		addFilteredCodes(countryCode);
+	if (constraints.included) {
+		addFilteredCodes(constraints.included);
+	} else if (constraints.excluded) {
+		addFilteredCodes(constraints.excluded, false);
+	} else {
+		addFilteredCodes([], false);
 	}
 }
 
