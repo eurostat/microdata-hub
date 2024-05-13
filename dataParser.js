@@ -77,13 +77,19 @@ function createFormattedCodeLists(dfCodeListCollection) {
  * @returns {Object} - An object containing the extracted constraints.
  */
 function getConstraints(contentConstraints) {
-	const { cubeRegions } = contentConstraints[0];
-	const { attributes } = cubeRegions[0];
+	const cubeRegions = contentConstraints[0].cubeRegions; // TODO: ask clarification why there is a contentConstraints and cubeRegions list
 
-	const constraints = attributes.reduce((acc, { id, values }) => {
-		acc[id] = values;
-		return acc;
+	const constraints = cubeRegions.reduce((acc, cubeRegion) => {
+		const { attributes } = cubeRegion;
+
+		const cubeConstraints = attributes.reduce((cubeAcc, { id, values }) => {
+			cubeAcc[id] = values;
+			return cubeAcc;
+		}, {});
+
+		return { ...acc, ...cubeConstraints };
 	}, {});
+
 	return constraints;
 }
 
@@ -111,8 +117,40 @@ function getLinkedCategoriesForDataflow(dfCategorisations) {
 	});
 }
 
-export async function renderConceptsCollection(dfReferenceCollection) {
-	const { dataStructures, codelists, conceptSchemes, categorisations, contentConstraints, dfId, provisionAgreements } = dfReferenceCollection;
+/**
+ * Transforms a collection of dataflow references into a structured object containing
+ * all necessary data for a concept list.
+ *
+ * @param {Object} dfReferenceCollection - A collection of dataflow references.
+ * @property {Array} dataStructures - The data structures of the dataflow.
+ * @property {Array} codelists - The code lists of the dataflow.
+ * @property {Array} conceptSchemes - The concept schemes of the dataflow.
+ * @property {Array} categorisations - The categorisations of the dataflow.
+ * @property {Array} contentConstraints - The content constraints of the dataflow.
+ * @property {string} dfId - The dataflow ID.
+ * @property {Array} provisionAgreements - The provision agreements of the dataflow.
+ *
+ * @returns {Object} An object containing all necessary data for a concept list.
+ * @property {string} dsId - The structure ID.
+ * @property {string} dfId - The dataflow ID.
+ * @property {Array} categories - The data collection properties: domain, period (year), file type.
+ * @property {Array} concepts - A collection of concept IDs with a reference to the code list ID and version.
+ * @property {Array} codes - A collection of code list IDs with actual codes.
+ * @property {Array} constraints - A collection of dataflow constraints, each constraint is a collection of concept IDs with codes.
+ * @property {Array} provisionAgreement - A list of country codes that the agreement is binding.
+ * @property {string} description - The concept description text.
+ * @property {string} name - The concept name.
+ */
+export async function constructArtefactCollectionElement(dfReferenceCollection) {
+	const {
+		dataStructures,
+		codelists,
+		conceptSchemes,
+		categorisations,
+		contentConstraints,
+		dfId,
+		provisionAgreements,
+	} = dfReferenceCollection;
 	const {
 		id: dsId,
 		dataStructureComponents: {
@@ -120,21 +158,24 @@ export async function renderConceptsCollection(dfReferenceCollection) {
 			dimensionList: { dimensions },
 		},
 	} = dataStructures[0];
-	const	name = getName(conceptSchemes);
+	const name = getName(conceptSchemes);
 	const description = getDescription(conceptSchemes);
-	const provisionAgreement = provisionAgreements ? provisionAgreements.map(({ id }) => id.split("_").pop().substring(0,2)) : [];
+	const provisionAgreementCountries = provisionAgreements
+		? provisionAgreements.map(({ id }) => id.split("_").pop().substring(0, 2))
+		: [];
 	const concepts = getConcepts(attributes.concat(dimensions));
 	const codes = createFormattedCodeLists(codelists);
 	const constraints = getConstraints(contentConstraints);
-	const linkedCategoriesForDataflow = getLinkedCategoriesForDataflow(categorisations);
+	const linkedCategoriesForDataflow =
+		getLinkedCategoriesForDataflow(categorisations);
 	return {
 		dsId: dsId,
 		dfId: dfId,
 		categories: linkedCategoriesForDataflow,
 		concepts,
 		codes,
-		constraints,
-		provisionAgreement,
+		// constraints,
+		provisionAgreementCountries,
 		description,
 		name,
 	};
@@ -240,17 +281,14 @@ export async function acquireConstraintsForDfId(url, dfId) {
 	const { data: { contentConstraints }} = await getJSONDataCache(url);
 
 	for (let i = 0; i < contentConstraints.length; i++) {
-		const { constraintAttachment, cubeRegions } = contentConstraints[i];
+		const { constraintAttachment, cubeRegions } = contentConstraints[i];  // TODO: ask for clarification why there is a list of both
 		const [attachedTo] = Object.keys(constraintAttachment);
-
-		if (attachedTo !== "provisionAgreements") continue;
 
 		if (Object.keys(constraintAttachment).length > 1) {
 			console.warn('Warning: constraintAttachment has more than one key', Object.keys(constraintAttachment));
 		}
 
-		const [paUrn] = constraintAttachment[attachedTo]
-		const countryCode = paUrn.split("_").pop().substring(0, 2);
+		const countryCode = getCountryCode(constraintAttachment, attachedTo);
 
 		cubeRegions.forEach(({ attributes, keyValues, components, isIncluded }) => {
 			[attributes, keyValues, components].forEach((property) => {
@@ -271,6 +309,14 @@ export async function acquireConstraintsForDfId(url, dfId) {
 	return constraints;
 }
 
+function getCountryCode(constraintAttachment, attachedTo) {
+	const [paUrn] = constraintAttachment[attachedTo];
+	const countryCode = attachedTo === "dataflows"
+		? "ALL"
+		: paUrn.split("_").pop().substring(0, 2);
+	return countryCode;
+}
+
 /**
  * Generates constraint values based on the provided constraint items, attached entity, inclusion status, and country code.
  * @param {Array} constraintItems - An array of constraint items containing id and values.
@@ -289,6 +335,11 @@ function getConstraintValues(constraintItems, attachedTo, isIncluded, countryCod
 	return constraints;
 }
 
+/**
+ * Acquires a collection of categories from the provided URL.
+ * @param {string} url - The URL to fetch the category data from.
+ * @returns {Promise<Array>} A promise that resolves to an array of category objects.
+ */
 export async function acquireCategoriesCollection(url) {
 	const { data: { categorySchemes } } = await getJSONDataCache(url);
 
@@ -312,10 +363,33 @@ export async function acquireCategoriesCollection(url) {
 	}
 }
 
+/**
+ * Creates a unique concept collection by processing the provided artefact and accumulating concepts.
+ *
+ * @param {Object} accumulatedConcept - The accumulated concepts so far.
+ * @param {object} artefact - The artefact containing information about the concept.
+ * @property {string} dsId - The structure ID.
+ * @property {string} dfId - The dataflow ID.
+ * @property {Object} concepts - The concepts in the artefact.
+ * @property {Object} description - The descriptions of the concepts.
+ * @property {Object} name - The names of the concepts.
+ *
+ * @returns {Object} The updated collection of unique concepts.
+ *
+ * Each concept in the collection includes:
+ * - name: The name of the concept.
+ * - description: The description of the concept. Defaults to "no description" if not provided.
+ * - representation: Indicates how the concept data is represented. Can be "codes", "string", "integer",
+ *                   "no format", or "mixed". Latter is used when representation changes over the time'
+ * - conceptRoles: Is a reference to the General Concepts. We filter the list of concept roles. Only includes "SEX" and "AGE".
+ * - dsd: An array of objects, each containing the dataflow ID, structure ID, and code list ID.
+ * - appearance: An object indicating whether the concept uses codes or text in the artefact.
+ *               Represented by "c" for codes and "t" for text.
+ */
 export function createUniqueConceptCollection(accumulatedConcept, artefact) {
 	const { dsId, dfId, concepts, description, name } = artefact;
 
-	Object.keys(concepts).forEach((conceptId, idx) => {
+	Object.keys(concepts).forEach((conceptId) => {
 		const concept = concepts[conceptId];
 		const clId = concept.id || '';
 
@@ -348,17 +422,26 @@ export function createUniqueConceptCollection(accumulatedConcept, artefact) {
 	return accumulatedConcept;
 }
 
+/**
+ * Retrieves the appearances of countries in the provided list of dataflow IDs.
+ *
+ * @param {Array} dfIdFilteredLis - The list of dataflow IDs to filter by.
+ *
+ * @returns {Array} An array of objects, each representing a country and its appearances in the dataflows.
+ * @property {string} countryCode - The country code.
+ * @property {Object} dfIds - An object where each key is a dataflow ID and the value is "x" if the country appears in that dataflow.
+ */
 export function getCountryAppearances(dfIdFilteredLis) {
-	const artefactsCollection = getStorageData(sessionKeys.dataFlowCollection);
+	const artefactsCollection = getStorageData(sessionKeys.artefactsCollection);
 
-	const countryAppearances = artefactsCollection.reduce((provisionAgreements, {dfId, provisionAgreement}) => {
+	const countryAppearances = artefactsCollection.reduce((acc, {dfId, provisionAgreementCountries}) => {
 		if (dfIdFilteredLis.length === 0 || dfIdFilteredLis.includes(dfId)) {
-			provisionAgreement.forEach(countryCode => {
-				if (!provisionAgreements[countryCode]) { provisionAgreements[countryCode] = {} }
-				provisionAgreements[countryCode][dfId] = "x";
+			provisionAgreementCountries.forEach(countryCode => {
+				if (!acc[countryCode]) { acc[countryCode] = {} }
+				acc[countryCode][dfId] = "x";
 			});
 		}
-		return provisionAgreements;
+		return acc;
 	}, {});
 
 	return Object.entries(countryAppearances).map(([countryCode, dfIds]) => ({
