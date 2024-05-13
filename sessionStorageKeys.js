@@ -6,7 +6,7 @@ export const cacheName = "sdmx-concept-navigator-cache";
 export const sessionKeys = {
 	dfIdsFiltered: "filteredDataFlowIds",
 	dfIdsAll: "allDataFlowIds",
-	dataFlowCollection: "dataFlowCollection",
+	artefactsCollection: "artefactsCollection",
 	uniqueConcepts: "derivedUniqueConcepts",
 	dsLinkingDf: "dataStructureLinkingDataFlow",
 	constraintCollection: "constraintCollection",
