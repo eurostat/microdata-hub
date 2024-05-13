@@ -231,7 +231,7 @@ function attachClickHandlersToDataActionButtons(artefactsCollection) {
 	/** Since the modal is initially hidden, this event listener ensures
 	 * column widths are adjusted upon modal visibility to prevent layout issues.
 	 */ 
-	$('#myModal').on('shown.bs.modal', function (e) {
+	$('#codes-table-modal').on('shown.bs.modal', function (e) {
 		var checkVisibility = setInterval(function() {
 			var table = document.getElementById('codes-table');
 			if (isElementFullyVisible(table)) {
@@ -249,7 +249,7 @@ function attachClickHandlersToDataActionButtons(artefactsCollection) {
 			createCodesTable(artefactsCollection, conceptId, country);
 
 			$(".modal-title").text(`${conceptId} variable code list${country !== "codes" ? ` for "${country}"` : ""}`);	
-			$("#myModal").modal("show");
+			$("#codes-table-modal").modal("show");
 		});
 	});
 }
