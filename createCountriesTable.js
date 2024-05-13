@@ -18,7 +18,7 @@ export function initializeCountriesTable(countriesDataForRows, dfIds) {
     data: countriesDataForRows,
     columns: tableHeaders,
     paging: true,
-    pageLength: 10,
+    pageLength: 50,
     searching: true,
     autoWidth: true,
   });
