@@ -1,13 +1,11 @@
 # MDHUB Prototype
 
-## Overview
-The MDHUB Prototype is an interactive web-based platform crafted to simplify the process of exploring and understanding statistical concepts. It utilizes a collection of JavaScript modules that work in tandem to retrieve, interpret, and exhibit data sourced from Eurostat's SDMX API. With its user-friendly interface, the MDHUB Prototype serves as an essential asset for researchers, statisticians, and anyone with a keen interest in data, enabling them to effortlessly navigate through intricate statistical information. 
+The MDHUB (Microdata Hub) Prototype is an interactive web-based platform crafted to simplify the process of exploring and understanding statistical concepts. It utilizes a collection of JavaScript modules that work in tandem to retrieve, interpret, and exhibit data sourced from Eurostat's SDMX API. With its user-friendly interface, the MDHUB Prototype serves as an essential asset for researchers, statisticians, and anyone with a keen interest in data, enabling them to effortlessly navigate through intricate statistical information. 
 
 
-## MDHUB Prototype: Feature Summary
+## Key Features
 
-Here's a brief summary of its key features:
-- **Cross-domain navigation**: It allows users to explore concepts and country participation across different datasets of various domains (EU-LFS, EU-SILC).
+- **Cross-domain navigation**: It allows users to explore concepts and country participation across various domains (EU-LFS, EU-SILC).
 
 - **Dynamic Data Categorization**: Users can select from various microdata categories through a dynamic form, enabling targeted data exploration.
 
