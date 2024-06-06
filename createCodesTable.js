@@ -79,67 +79,22 @@ function generateTableHeaders(tableRows, artefactsCollection) {
  * @returns {array} An array of strings representing the header rows for the table.
  */
 function buildTableHeaderRows(artefactsCollection, dfIds) {
-	const yearsCount = new Map();
 	const dfIdParameters = dfIds.map((dfId) => {
 		const parameters = extractDfIdParameters(artefactsCollection, dfId);
-		yearsCount.set(parameters.MICRODATA_COLLECTION_YEAR,
-			(yearsCount.get(parameters.MICRODATA_COLLECTION_YEAR) || 0) + 1);
 		return parameters;
 	});
 
-	const rowspans = ["id", "Code Name"].map(key => `<th rowspan='3'>${key}</th>`);
-	const row1 = getFirstRow(yearsCount);
-	const row2 = getSecondRow(dfIdParameters);
-	const row3 = getThirdRow(dfIdParameters);
-
-	const headers = ["<tr>"].concat(rowspans, row1, ["</tr><tr>"], row2, ["</tr><tr>"], row3, ["</tr>"]);
-	return headers;
-}
-
-function getFirstRow(yearsCount) {
-	const yearsKeys = Array.from(yearsCount.keys());
-	const tableHeaders = yearsKeys.map(key => {
-		const colspanValue = yearsCount.get(key);
-		return `<th colspan='${colspanValue}'>${key}</th>`;
-	});
-	return tableHeaders;
-}
-
-/**
- * Generates the second row of a table based on the given dfIdParameters.
- * @param {Array} dfIdParameters - An array of parameters for the table rows.
- * @returns {Array} An array representing the second row of the table.
- */
-function getSecondRow(dfIdParameters) {
-	let row2 = [];
-	let previousHeader = null;
-	let colspan = 1;
-
-	for (const parameters of dfIdParameters) {
-		if (previousHeader && parameters.MICRODATA_FILE_TYPE === previousHeader.MICRODATA_FILE_TYPE) {
-			colspan++;
-		} else {
-			if (previousHeader) {
-				row2.push(`<th colspan='${colspan}'>${previousHeader.MICRODATA_FILE_TYPE}</th>`);
-			}
-			previousHeader = parameters;
-			colspan = 1;
-		}
-	}
-
-	if (previousHeader) {
-		row2.push(`<th colspan='${colspan}'>${previousHeader.MICRODATA_FILE_TYPE}</th>`);
-	}
-
-	return row2;
-}
-
-function getThirdRow(dfIdParameters) {
-	return dfIdParameters.map(parameters => {
+	const headers = dfIdParameters.map(parameters => {
 		const parts = parameters.MICRODATA_DOMAINS.split('_');
 		const lastPart = parts.pop();
-		return `<th>${1 ? parameters.MICRODATA_DOMAINS : lastPart}</th>`;
+		const year = parameters.MICRODATA_COLLECTION_YEAR;
+		const fileType = parameters.MICRODATA_FILE_TYPE;
+		return `<th>${year} ${fileType} ${1 ? parameters.MICRODATA_DOMAINS : lastPart}</th>`;
 	});
+
+	const rowspans = ["id", "Code Name"].map(key => `<th>${key}</th>`);
+	const finalHeaders = ["<tr>"].concat(rowspans, headers, ["</tr>"]);
+	return finalHeaders;
 }
 /**
  * Extracts parameters based on the dfId from the artefacts collection.
