@@ -66,3 +66,8 @@ The MDHUB Prototype is structured into several layers, each responsible for diff
 - **Presentation Layer**: Handles the display and user interactions within the browser.
 - **Data Layer**: Manages API calls, data parsing, and session storage.
 - **Logic Layer**: Contains the business logic that drives the application's core functionalities.
+
+## Documentation
+- **Code Comments**: Each module contains detailed comments explaining its purpose, functions, and interactions with other modules.
+- **Structure Overview**: The README provides an overview of the application's key features, modules, and usage instructions.
+- **Development Guide**: Detailed documentation for extending modules can be found in the docs directory.
