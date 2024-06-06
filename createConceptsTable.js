@@ -1,5 +1,6 @@
 /** 
- * "createConceptsTables.js" is a module that creates the concepts table and the child row with concept details.
+ * "createConceptsTables.js"
+ * is a module that creates the concepts table and the child row with concept details.
  * It uses the DataTables library to create the tables and the dataFetcher module to fetch the data from the API.
  * The module exports a function that creates the concepts table and returns a function
  * that updates the concepts table with new data.
@@ -20,6 +21,11 @@ import {
 import { sessionKeys } from "./sessionStorageKeys.js";
 import { createCodesTable } from "./createCodesTable.js";
 
+/**
+ * Initializes the concepts table with the provided concept data for rows.
+ * @param {Array} conceptDataForRows - The data to populate the table rows.
+ * @returns {Function} - An update function to update the parent data table.
+ */
 export async function initializeConceptsTable(conceptDataForRows) {
 	const placeholder = document.querySelector("#concepts-table > table");
 	const dfIdFullList = getStorageData(sessionKeys.dfIdsAll);
@@ -123,6 +129,12 @@ export async function initializeConceptsTable(conceptDataForRows) {
 	return updateParentDataTable;
 }
 
+/**
+ * Generates the header and footer for a table based on the artefacts collection and a list of dfIds.
+ * @param {Array} artefactsCollection - The collection of artefacts.
+ * @param {Array} dfIdFullList - The list of dfIds to generate the table columns.
+ * @returns {Array} An array of column objects for the table.
+ */
 function generateTableHeaderAndFooter(artefactsCollection, dfIdFullList) {
 	const dsIds = dfIdFullList.map((dfId) => {
 		return artefactsCollection.find((artefact) => artefact.dfId === dfId).dsId;
@@ -185,6 +197,11 @@ function buildTableRow(label, value) {
 	return `<tr><td width="15%">${label}</td><td width="85%">${value}</td></tr>`;
 }
 
+/**
+ * Generates a child row view for a given row data object.
+ * @param {Object} rowData - The data object containing information about the row.
+ * @returns {string} - The HTML representation of the child row view.
+ */
 function generateChildRowView(rowData) {
 	const {conceptRoles, description, conceptId, conceptName} = rowData;
 	const constrainedCountryCodes = extractCountryCodes(conceptId);
@@ -207,6 +224,12 @@ function generateChildRowView(rowData) {
 	return `<table class="table table-bordered child-table">${rows.join('')}</table>`;
 }
 
+/**
+ * Creates an array of data action buttons based on the input array and concept ID.
+ * @param {Array} array - The array of elements to create buttons for.
+ * @param {string} conceptId - The concept ID to associate with the buttons.
+ * @returns A string of HTML buttons with data attributes for each element in the array.
+ */
 function createDataActionButtons(array, conceptId) {
 	return array
 		.map(
@@ -216,6 +239,11 @@ function createDataActionButtons(array, conceptId) {
 		.join("");
 }
 
+/**
+ * Checks if the given element is fully visible within the viewport.
+ * @param {Element} el - The element to check visibility for.
+ * @returns {boolean} True if the element is fully visible, false otherwise.
+ */
 function isElementFullyVisible(el) {
 	var rect = el.getBoundingClientRect();
 	return (
@@ -225,6 +253,7 @@ function isElementFullyVisible(el) {
 		rect.right <= (window.innerWidth || document.documentElement.clientWidth)
 	);
 }
+
 function attachClickHandlersToDataActionButtons(artefactsCollection) {
 	const countryButtons = document.querySelectorAll(".open-modal-button");
 
