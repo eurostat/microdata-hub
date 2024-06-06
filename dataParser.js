@@ -77,7 +77,7 @@ function createFormattedCodeLists(dfCodeListCollection) {
  * @returns {Object} - An object containing the extracted constraints.
  */
 function getConstraints(contentConstraints) {
-	const cubeRegions = contentConstraints[0].cubeRegions; // TODO: ask clarification why there is a contentConstraints and cubeRegions list
+	const cubeRegions = contentConstraints[0].cubeRegions; 
 
 	const constraints = cubeRegions.reduce((acc, cubeRegion) => {
 		const { attributes } = cubeRegion;
