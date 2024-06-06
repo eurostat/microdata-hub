@@ -37,7 +37,7 @@ export function createCodesTable(artefactsCollection, conceptId, country) {
 				.columns()
 				.data()
 				.each((value, index) => {
-					// Check if all values in the column are empty or undefined
+					// Check if all values in the column are empty or undefined and hide the column if so
 					const isEmptyColumn = value.every(cellValue => cellValue === "" || cellValue === undefined);
 
 					if (isEmptyColumn) {
@@ -85,11 +85,9 @@ function buildTableHeaderRows(artefactsCollection, dfIds) {
 	});
 
 	const headers = dfIdParameters.map(parameters => {
-		const parts = parameters.MICRODATA_DOMAINS.split('_');
-		const lastPart = parts.pop();
 		const year = parameters.MICRODATA_COLLECTION_YEAR;
 		const fileType = parameters.MICRODATA_FILE_TYPE;
-		return `<th>${year} ${fileType} ${1 ? parameters.MICRODATA_DOMAINS : lastPart}</th>`;
+		return `<th>${year} ${fileType} ${parameters.MICRODATA_DOMAINS}</th>`; 
 	});
 
 	const rowspans = ["id", "Code Name"].map(key => `<th>${key}</th>`);
