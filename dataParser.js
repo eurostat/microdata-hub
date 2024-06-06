@@ -72,28 +72,6 @@ function createFormattedCodeLists(dfCodeListCollection) {
 }
 
 /**
- * Extracts constraints from the content constraints object.
- * @param {Array} contentConstraints - An array containing content constraints.
- * @returns {Object} - An object containing the extracted constraints.
- */
-function getConstraints(contentConstraints) {
-	const cubeRegions = contentConstraints[0].cubeRegions; 
-
-	const constraints = cubeRegions.reduce((acc, cubeRegion) => {
-		const { attributes } = cubeRegion;
-
-		const cubeConstraints = attributes.reduce((cubeAcc, { id, values }) => {
-			cubeAcc[id] = values;
-			return cubeAcc;
-		}, {});
-
-		return { ...acc, ...cubeConstraints };
-	}, {});
-
-	return constraints;
-}
-
-/**
  * Retrieves linked categories for a given dataflow based on the data flow categorisations.
  * @param {Array} dfCategorisations - An array of categorisations for the dataflow.
  * @returns {Array} An array of objects containing categorisation information.
@@ -126,7 +104,6 @@ function getLinkedCategoriesForDataflow(dfCategorisations) {
  * @property {Array} codelists - The code lists of the dataflow.
  * @property {Array} conceptSchemes - The concept schemes of the dataflow.
  * @property {Array} categorisations - The categorisations of the dataflow.
- * @property {Array} contentConstraints - The content constraints of the dataflow.
  * @property {string} dfId - The dataflow ID.
  * @property {Array} provisionAgreements - The provision agreements of the dataflow.
  *
@@ -136,7 +113,6 @@ function getLinkedCategoriesForDataflow(dfCategorisations) {
  * @property {Array} categories - The data collection properties: domain, period (year), file type.
  * @property {Array} concepts - A collection of concept IDs with a reference to the code list ID and version.
  * @property {Array} codes - A collection of code list IDs with actual codes.
- * @property {Array} constraints - A collection of dataflow constraints, each constraint is a collection of concept IDs with codes.
  * @property {Array} provisionAgreement - A list of country codes that the agreement is binding.
  * @property {string} description - The concept description text.
  * @property {string} name - The concept name.
@@ -147,7 +123,6 @@ export async function constructArtefactCollectionElement(dfReferenceCollection) 
 		codelists,
 		conceptSchemes,
 		categorisations,
-		contentConstraints,
 		dfId,
 		provisionAgreements,
 	} = dfReferenceCollection;
@@ -165,7 +140,6 @@ export async function constructArtefactCollectionElement(dfReferenceCollection) 
 		: [];
 	const concepts = getConcepts(attributes.concat(dimensions));
 	const codes = createFormattedCodeLists(codelists);
-	const constraints = getConstraints(contentConstraints);
 	const linkedCategoriesForDataflow =
 		getLinkedCategoriesForDataflow(categorisations);
 	return {
@@ -174,7 +148,6 @@ export async function constructArtefactCollectionElement(dfReferenceCollection) 
 		categories: linkedCategoriesForDataflow,
 		concepts,
 		codes,
-		// constraints,
 		provisionAgreementCountries,
 		description,
 		name,
@@ -189,8 +162,6 @@ export async function constructArtefactCollectionElement(dfReferenceCollection) 
  * concept schemes, data structures, content constraints, and provision agreements.
  */
 export async function acquireDataFlowResources(url, dfId) {
-	// console.log(url.href);
-	// console.log(await getJSONDataCache(url));	
 	const {
 		data: {
 			codelists,
