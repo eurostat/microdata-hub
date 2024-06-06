@@ -1,3 +1,9 @@
+/** dataFetcher.js 
+ *  this file is responsible for fetching data from the server and preparing it
+for use in the application. It contains functions that make requests to the server to retrieve data,
+as well as functions that process and transform the data for use in the application.
+The functions in this file are used by other parts of the application to fetch and process data as needed.
+ */ 
 import {
 	acquireCategoriesCollection,
 	acquireDataFlowResources,
@@ -8,7 +14,13 @@ import {
 import { sessionKeys, cacheName } from "./sessionStorageKeys.js";
 import { getStorageData, setStorageData } from "./utils.js";
 
-// dataFetcher.js
+/**
+ * Retrieves JSON data from the cache or fetches it from the network and stores it in the cache.
+ * @param {string} url - The URL of the JSON data to retrieve.
+ * @param {boolean} [purge=false] - Whether to force a fetch from the network and update the cache.
+ * @returns {Promise<Object>} A promise that resolves to the JSON data object.
+ * @throws {Error} If the fetched data does not contain a "data" property.
+ */
 export async function getJSONDataCache(url, purge = false) {
 	const cache = await caches.open(cacheName);
 	let response = await cache.match(url);
@@ -23,6 +35,35 @@ export async function getJSONDataCache(url, purge = false) {
 	return data;
 }
 
+/**
+ * Constructs a URL for making an SDMX request based on the provided parameters.
+ * @param {Object} p - The parameters for the SDMX request.
+ * @param {string} p.type - The type of the SDMX request.
+ * @param {string} [p.agency="all"] - The agency for the SDMX request.
+ * @param {string} p.id - The ID for the SDMX request.
+ * @param {string[]} [p.references] - The references for the SDMX request.
+ * @param {string} [p.detail] - The detail for the SDMX request.
+ * @returns {URL} A URL object for the SDMX request.
+ */
+export function sdmxRequestQueryBuilder(p) {
+	const base =
+		"https://webgate.acceptance.ec.europa.eu/fusionregistry/sdmx/v2/structure";
+	const searchParams = {
+		format: "sdmx-json",
+		...(p.references && { references: p.references }),
+		...(p.detail && { detail: p.detail }),
+	};
+	const queryParams = new URLSearchParams(searchParams).toString();
+	const url = `${base}/${p.type}/${p.agency || "all"}/${p.id}/latest?${queryParams}`;
+	const urlObj = new URL(url);
+	return urlObj;
+}
+
+/**
+ * Acquires the artifacts collection for a given dataflow ID.
+ * @param {string} dfId - The ID of the dataflow.
+ * @returns {Promise} A promise that resolves to the artifacts collection.
+ */
 export async function acquireArtefactsCollection(dfId) {
 	const url = sdmxRequestQueryBuilder({
 		type: "dataflow",
@@ -36,6 +77,11 @@ export async function acquireArtefactsCollection(dfId) {
 	return conceptCollection;
 }
 
+/**
+ * Makes an asynchronous request to acquire constraints data for a given dataflow ID.
+ * @param {string} dfId - The ID of the dataflow for which constraints data is requested.
+ * @returns {Promise} A promise that resolves with the constraints data for the specified dataflow ID.
+ */
 export async function requestConstraintsData(dfId) {
 	const url = sdmxRequestQueryBuilder({
 		type: "dataflow",
@@ -45,6 +91,12 @@ export async function requestConstraintsData(dfId) {
 	return await acquireConstraintsForDfId(url, dfId);
 }
 
+/**
+ * Requests category scheme data from a specific URL using the SDMX request query builder.
+ * The category scheme data is retrieved for the ESTAT agency with the ID MICRODATA_DOMAINS
+ * and includes all references.
+ * @returns {Promise} A promise that resolves with the dataflow structure keys table.
+ */
 export async function requestCategorySchemeData() {
 	const url = sdmxRequestQueryBuilder({
 		type: "categoryscheme",
@@ -54,30 +106,12 @@ export async function requestCategorySchemeData() {
 	});
 	return await createDataflowStructureKeysTable(url);
 }
-export async function getDataFlows(url) {
-	const jsonData = await getJSONDataCache(url);
-	const data = jsonData.data;
-	return data;
-}
-export function sdmxRequestQueryBuilder(p) {
-	const base =
-		"http://fusion-metadata-registry.estat.s4dad.aws.cloud.tech.ec.europa.eu/sdmx/v2/structure";
-	const searchParams = {
-		format: "sdmx-json",
-		...(p.references && { references: p.references }),
-		...(p.detail && { detail: p.detail }),
-	};
-	const queryParams = new URLSearchParams(searchParams).toString();
-	const url = `${base}/${p.type}/${p.agency || "all"}/${
-		p.id
-	}/latest?${queryParams}`;
-	// TODO: remove repeated calls
-	// if (p.type ==='dataflow' && p.id ==='LFS_ANON_SEC_A') console.trace(url);
-	const urlObj = new URL(url);
-	// console.log(p.type,p.id, urlObj.searchParams.toString());
-	return urlObj;
-}
 
+/**
+ * Retrieves dataflow IDs that match the form values provided in the formValuesMap.
+ * @param {Object} formValuesMap - A map of form values to match against dataflow IDs.
+ * @returns {Array} An array of dataflow IDs that match the form values.
+ */
 export async function getDataflowIdsMatchingFormValues(formValuesMap) {
 	if (Object.keys(formValuesMap).length === 0)
 		return getStorageData(sessionKeys.dfIdsAll);
@@ -87,9 +121,11 @@ export async function getDataflowIdsMatchingFormValues(formValuesMap) {
 		id: "all",
 		references: "ancestors",
 	});
+
 	const {
 		data: { categorisations },
 	} = await getJSONDataCache(url);
+
 	const categoriesCollection = JSON.parse(
 		sessionStorage.getItem(sessionKeys.dataCategory)
 	);
@@ -134,6 +170,20 @@ function getDfIdByDfUrn(dfUrn) {
 }
 
 /**
+ * Asynchronously fetches category scheme data from a specified URL using SDMX request builder.
+ * @returns {Promise} A promise that resolves with the categories collection data.
+ */
+export async function getCategorySchemeData() {
+	const url = sdmxRequestQueryBuilder({
+		type: "categoryscheme",
+		id: "all",
+		references: "parents",
+	});
+	const categoriesCollection = await acquireCategoriesCollection(url);
+	return categoriesCollection;
+}
+
+/**
  * Retrieves a limited artefacts collection based on the provided data flow IDs.
  * @param {Array} dfIdsFilteredList - An array of data flow IDs to filter the artefacts collection.
  * @returns {Promise} A filtered artefacts collection based on the provided data flow IDs.
@@ -156,6 +206,12 @@ export async function fetchAndFilterArtefactsCollection(dfIdsFilteredList) {
 	}
 }
 
+/**
+ * Sets constraints collection based on the given dfIds.
+ * @param {Array} dfIds - An array of dfIds to set constraints for.
+ * @param {boolean} [purge=false] - A flag to determine whether to purge existing collection.
+ * @returns {Promise} The updated constraints collection.
+ */
 export async function setConstraintsCollection(dfIds, purge = false) {
 	let collection = getStorageData(sessionKeys.constraintCollection);
 
@@ -171,14 +227,4 @@ export async function setConstraintsCollection(dfIds, purge = false) {
 		);
 	}
 	return collection;
-}
-
-export async function getCategorySchemeData() {
-	const url = sdmxRequestQueryBuilder({
-		type: "categoryscheme",
-		id: "all",
-		references: "parents",
-	});
-	const categoriesCollection = await acquireCategoriesCollection(url);
-	return categoriesCollection;
 }
