@@ -29,7 +29,7 @@ To illustrate these concepts, the following example can be provided:
  
 The diagram below illustrates the relationship between the main SDMX objects listed above.
 
-![Relationship between the main SDMX objects used to model microdata collections](https://github.com/eurostat/microdata-hub/blob/main/SDMX%20objects%20for%20microdata%20diagram.png "SDMX objects used to model microdata collections")
+![Relationship between the main SDMX objects used to model microdata collections](https://github.com/eurostat/microdata-hub/blob/main/docs/SDMX%20objects%20for%20microdata%20diagram.png "SDMX objects used to model microdata collections")
 
 ## Additional features
 
