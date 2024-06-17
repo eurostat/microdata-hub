@@ -29,3 +29,20 @@ To illustrate these concepts, the following example can be provided:
  
 The diagram below illustrates the relationship between the main SDMX objects listed above.
 
+## Additional features
+
+### Category Schemes
+Three category schemes have also been introduced in order to group together *Dataflows* and *Data Structure Definitions (DSDs)* related to microdata collection according two certain properties. There are three relevant category schemes:
+
+- [ESTAT+MICRODATA_DOMAINS+1.0](https://webgate.acceptance.ec.europa.eu/fusionregistry/items/categoryscheme.html?urn=urn:sdmx:org.sdmx.infomodel.categoryscheme.CategoryScheme=ESTAT:MICRODATA_DOMAINS(1.0)) : This Category Scheme contains one Category per each microdata collection. Each Category is linked to the *Dataflows* and *Data Structure Definitions (DSDs)* related to the relevant microdata collection.
+- [ESTAT+MICRODATA_FILE_TYPE+1.0](https://webgate.acceptance.ec.europa.eu/fusionregistry/items/categoryscheme.html?urn=urn:sdmx:org.sdmx.infomodel.categoryscheme.CategoryScheme=ESTAT:MICRODATA_FILE_TYPE(1.0)) : This Category Scheme contains one Category per each kind of microdata file available, i.e. anonymised Scientific User Files (SUF) vs non-anonymised Secure Use Files (SEC). Each Category is linked to the *Dataflows* related to the relevant file type.
+- [SDMX+MICRODATA_COLLECTION_YEAR+1.0](https://webgate.acceptance.ec.europa.eu/fusionregistry/items/categoryscheme.html?urn=urn:sdmx:org.sdmx.infomodel.categoryscheme.CategoryScheme=SDMX:MICRODATA_COLLECTION_YEAR(1.0)) : This Category Scheme contains one Category per reference year. Each Category is linked to the *Dataflows* related to the relevant year.
+
+By using these category scheme, the *Dataflows* and *Data Structure Definitions (DSDs)* related to microdata collection can be identified and grouped by collection, year and file type.
+
+### Concept role
+Within a *Data Structure Definition*. certain concepts are related to generic concepts such as "AGE" or "SEX", though they may be called with different concept IDs. In order to indicate these relationships / links to generic concepts, we have employed the *Concept Role* property within the microdata *DSDs*.
+
+The *Concept Role* element is associated to specific *Components* of a DSD and links them to generic concepts located in the *Concept Scheme* [ESTAT+CS+ESTAT_GENERAL_CONCEPTS+1.0](https://webgate.acceptance.ec.europa.eu/fusionregistry/items/conceptscheme.html?urn=urn:sdmx:org.sdmx.infomodel.conceptscheme.ConceptScheme=ESTAT:CS_ESTAT_GENERAL_CONCEPTS(1.0)).
+
+
