@@ -64,18 +64,16 @@ Several functions in the file utilize `sdmxRequestQueryBuilder` to construct URL
     * `id`: Set to `"all"`.
     * `references`: Set to `"parents"` to include parent references.
 
-Sure, let's break down the structure of the provided `dataFetcher` module:
-
 1. **Imports**: The module imports functions and constants from other modules, including `dataParser.js`, `sessionStorageKeys.js`, and `utils.js`. These imported functions and constants are used within the module's functions.
 
 2. **Function Declarations**:
    - **`getJSONDataCache`**: Retrieves JSON data from cache or fetches it from the network. It includes error handling to ensure that the fetched data contains a "data" property.
    - **`sdmxRequestQueryBuilder`**: Constructs a URL for making an SDMX request based on provided parameters.
-   - **`acquireArtefactsCollection`**: Retrieves the artifacts collection for a given dataflow ID.
+   - **`getCategorySchemeData`**: Asynchronously fetches category scheme data from a specified URL using the SDMX request builder. The response is used to create a map that stores information about categories. It will be used to map category attributes (like file type, domain, etc.) to the dataset.
+   - **`requestCategorySchemeData`**: Requests category scheme data from a specific URL using the SDMX request query builder.The response is used to define a relationship between DataStructure and DataFlow IDs, allowing them to be linked together.
+   - **`acquireArtefactsCollection`**: Retrieves the artifacts collection for a given dataset ID (DataStructure, Dataflow). 
    - **`requestConstraintsData`**: Makes an asynchronous request to acquire constraints data for a given dataflow ID.
-   - **`requestCategorySchemeData`**: Requests category scheme data from a specific URL using the SDMX request query builder.
-   - **`getDataflowIdsMatchingFormValues`**: Retrieves dataflow IDs that match form values provided in the `formValuesMap`.
-   - **`getCategorySchemeData`**: Asynchronously fetches category scheme data from a specified URL using the SDMX request builder.
+   - **`getDataflowIdsMatchingFormValues`**: Retrieves dataflow IDs that match form values provided in the `formValuesMap`. Creates a map between submit form (faceted search) and datasets. The map acts as a translator, converting user choices in the form into specific datasets they might be interested in.
    - **`fetchAndFilterArtefactsCollection`**: Retrieves a limited artifacts collection based on provided data flow IDs, filtering the collection.
    - **`setConstraintsCollection`**: Sets constraints collection based on given data flow IDs, with an option to purge existing collection.
 
